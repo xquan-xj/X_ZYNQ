@@ -1,5 +1,5 @@
 param(
-    [ValidateSet("validate", "create", "sim", "synth", "bitstream", "gui", "clean")]
+    [ValidateSet("validate", "create", "sim", "synth", "bitstream", "gui", "wave", "clean")]
     [string]$Action = "validate",
 
     [string]$Project = ".",
@@ -11,7 +11,18 @@ $ErrorActionPreference = "Stop"
 
 function Resolve-ProjectRoot {
     param([string]$Path)
-    return (Resolve-Path $Path).Path
+
+    if (Test-Path $Path) {
+        return (Resolve-Path $Path).Path
+    }
+
+    $repoRoot = Split-Path $PSScriptRoot -Parent
+    $projectByName = Join-Path (Join-Path $repoRoot "projects") $Path
+    if (Test-Path $projectByName) {
+        return (Resolve-Path $projectByName).Path
+    }
+
+    throw "Project not found: $Path. Pass a project path or a name under projects/."
 }
 
 function Find-ProjectScript {
@@ -116,6 +127,64 @@ function Invoke-VivadoGui {
     }
 }
 
+function Find-LatestWaveDatabase {
+    param([string]$Root)
+
+    $wdbFiles = @(Get-ChildItem -LiteralPath $Root -Recurse -Force -Filter "*.wdb" -File -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending)
+
+    if ($wdbFiles.Count -eq 0) {
+        return $null
+    }
+
+    return $wdbFiles[0].FullName
+}
+
+function Convert-ToTclPath {
+    param([string]$Path)
+    return ($Path -replace "\\", "/")
+}
+
+function Invoke-WaveGui {
+    param([string]$Root)
+
+    if (-not (Test-Path $Vivado)) {
+        throw "Vivado executable not found: $Vivado"
+    }
+
+    $wdbPath = Find-LatestWaveDatabase $Root
+    if (-not $wdbPath) {
+        throw "No .wdb waveform database found under project. Run 'fpga sim $Root' first."
+    }
+
+    $waveDir = Join-Path $Root "build\wave"
+    New-Item -ItemType Directory -Force -Path $waveDir | Out-Null
+    $waveScript = Join-Path $waveDir "open_wave.tcl"
+    $tclWdbPath = Convert-ToTclPath $wdbPath
+
+    $tcl = @(
+        "open_wave_database {$tclWdbPath}",
+        "create_wave_config",
+        "add_wave -r /*"
+    )
+    Set-Content -Path $waveScript -Value $tcl -Encoding ASCII
+
+    Write-Host "Wave database: $wdbPath"
+    Write-Host "Wave script:   $waveScript"
+
+    Remove-HdiWriteTests $Root
+    Push-Location $Root
+    try {
+        & $Vivado -mode gui -source $waveScript
+        if ($LASTEXITCODE -ne 0) {
+            throw "Vivado failed with exit code $LASTEXITCODE"
+        }
+    } finally {
+        Pop-Location
+        Remove-HdiWriteTests $Root
+    }
+}
+
 function Remove-HdiWriteTests {
     param([string]$Root)
 
@@ -185,6 +254,11 @@ switch ($Action) {
         Invoke-Hook $root "pre_gui"
         Invoke-VivadoGui $root $script
         Invoke-Hook $root "post_gui"
+    }
+    "wave" {
+        Invoke-Hook $root "pre_wave"
+        Invoke-WaveGui $root
+        Invoke-Hook $root "post_wave"
     }
     "clean" {
         $targets = @(

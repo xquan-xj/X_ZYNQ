@@ -74,7 +74,7 @@ D:\FPGA\ZYNQ\
 
 - `assets/` 里的启明星 7020 管脚表、原理图索引、手册资料
 - `.codex/skills/xilinx-suite/` 和 `.claude/skills/xilinx-suite/`
-- `tools/fpga.cmd` / `tools/fpga.ps1` 统一命令入口
+- `fpga.cmd` 根目录命令入口和 `tools/fpga.ps1` 实现脚本
 - `templates/qmx7020_fpga_project.yaml` 工程配置模板
 - `AGENTS.md` / `CLAUDE.md` 中的默认板卡、器件、Vivado 版本规则
 
@@ -109,16 +109,10 @@ project_name/
 
 ## 从母版创建新工程
 
-通过 `tools/` 入口创建派生工程：
+通过根目录命令入口创建派生工程：
 
 ```powershell
-tools\new-fpga uart_loopback
-```
-
-也可以使用统一入口：
-
-```powershell
-tools\fpga new uart_loopback
+fpga new uart_loopback
 ```
 
 这会从 `projects/_template_qmx7020/` 复制出：
@@ -137,16 +131,21 @@ projects/uart_loopback/
 
 ## 统一命令
 
-必须传入具体项目路径。封装脚本会在启动 Vivado 前把 Vivado 进程工作目录切到该项目目录：
+可以传入 `projects/` 下的工程名，也可以传入具体项目路径。封装脚本会在启动 Vivado 前把 Vivado 进程工作目录切到该项目目录：
 
 ```powershell
-tools\fpga validate projects\_template_qmx7020
-tools\fpga create projects\_template_qmx7020
-tools\fpga sim projects\_template_qmx7020
-tools\fpga synth projects\_template_qmx7020
-tools\fpga bitstream projects\_template_qmx7020
-tools\fpga gui projects\_template_qmx7020
+fpga validate _template_qmx7020
+fpga create _template_qmx7020
+fpga sim _template_qmx7020
+fpga synth _template_qmx7020
+fpga bitstream _template_qmx7020
+fpga gui _template_qmx7020
+fpga wave _template_qmx7020
 ```
+
+`wave` 用于在 `sim` 之后用 Vivado GUI 打开最新的 `.wdb` 波形数据库。
+
+如果在 PowerShell 中当前目录不在 `PATH`，请使用 `.\fpga ...`。
 
 严禁直接从工作区根目录、`.codex/` 或 `.claude/` 启动 Vivado。
 
@@ -190,6 +189,10 @@ hooks/pre_synth.ps1
 hooks/post_synth.ps1
 hooks/pre_bitstream.ps1
 hooks/post_bitstream.ps1
+hooks/pre_gui.ps1
+hooks/post_gui.ps1
+hooks/pre_wave.ps1
+hooks/post_wave.ps1
 ```
 
 适合做：
