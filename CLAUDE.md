@@ -65,6 +65,9 @@ All projects follow this layout:
 4. **Script everything**: use Tcl scripts (not GUI clicks) for reproducible builds
 5. **Check warnings**: Vivado warnings often predict board failures
 6. **Use local lightweight automation**: prefer `tools/fpga.ps1`, `templates/qmx7020_fpga_project.yaml`, and `tools/validate_fpga_project.ps1` for unified commands/config/checks instead of a generic global FPGA framework.
+7. **Keep generated files in projects**: never run Vivado from the workspace root, `.codex/`, or `.claude/`. Vivado must run with the concrete project directory as its process working directory so `.Xil/`, `.hdi.isWriteableTest.*.tmp`, logs, and generated files stay inside the project or ignored build folders.
+8. **Keep root clean**: put helper command wrappers under `tools/`; do not add root-level wrappers or generated tool files unless explicitly requested.
+9. **Clean Vivado write tests**: remove leftover `.hdi.isWriteableTest.*.tmp` files from the project tree after Vivado runs.
 
 ## VSCode Tasks
 

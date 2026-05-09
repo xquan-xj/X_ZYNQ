@@ -7,7 +7,7 @@ This workspace is tuned for 正点原子启明星 ZYNQ 7020 development with Viv
 FPGABuilder is a general FPGA build framework with a YAML-driven project model, unified CLI commands, plugin-style hooks, and organized build outputs. This workspace borrows the useful lightweight ideas without replacing the existing Xilinx/board-aware flow:
 
 - `fpga_project.yaml` template for project metadata and build settings
-- `fpga.cmd` and `tools/fpga.ps1` as unified command entry points
+- `tools/fpga.cmd` and `tools/fpga.ps1` as unified command entry points
 - `hooks/` convention for pre/post build steps
 - `tools/validate_fpga_project.ps1` for basic project checks
 - `build/logs`, `reports`, `sim`, and bitstream output conventions
@@ -71,16 +71,16 @@ Use `projects/_template_qmx7020/` as the preferred starting point for new QMX ZY
 - VSCode tasks under `.vscode/tasks.json`
 - optional hook entry points
 
-Create a derived project from the workspace root:
+Create a derived project through the `tools/` entry point:
 
 ```powershell
-.\new-fpga uart_loopback
+tools\new-fpga uart_loopback
 ```
 
 Equivalent unified form:
 
 ```powershell
-.\fpga new uart_loopback
+tools\fpga new uart_loopback
 ```
 
 Then update the derived project's `fpga_project.yaml`, `docs/requirements.md`, RTL, testbench, and XDC files.
@@ -97,16 +97,18 @@ For complete projects, prefer deriving from `projects/_template_qmx7020/` becaus
 
 ## Unified Commands
 
-Run from the workspace root:
+Always pass a concrete project path. The wrapper changes Vivado's process working directory to that project before launching Vivado:
 
 ```powershell
-.\fpga validate projects/_template_qmx7020
-.\fpga create projects/_template_qmx7020
-.\fpga sim projects/_template_qmx7020
-.\fpga synth projects/_template_qmx7020
-.\fpga bitstream projects/_template_qmx7020
-.\fpga gui projects/_template_qmx7020
+tools\fpga validate projects/_template_qmx7020
+tools\fpga create projects/_template_qmx7020
+tools\fpga sim projects/_template_qmx7020
+tools\fpga synth projects/_template_qmx7020
+tools\fpga bitstream projects/_template_qmx7020
+tools\fpga gui projects/_template_qmx7020
 ```
+
+Do not run Vivado directly from the workspace root, `.codex/`, or `.claude/`.
 
 The wrapper looks for scripts in either:
 

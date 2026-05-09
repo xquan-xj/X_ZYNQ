@@ -26,6 +26,7 @@ build/
 reports/
 sim/
 output/
+projects/
 projects/*/build/
 projects/*/reports/
 projects/*/sim/
@@ -38,6 +39,7 @@ projects/*/02_vivado/output/
 # Local MCP servers/connectors and dependencies
 .mcp/
 node_modules/
+assets/code_examples/
 
 # Machine-local assistant settings
 .claude/settings.local.json

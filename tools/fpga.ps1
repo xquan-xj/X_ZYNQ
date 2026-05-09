@@ -81,9 +81,17 @@ function Invoke-VivadoBatch {
 
     Write-Host "Vivado script: $Script"
     Write-Host "Vivado log:    $logPath"
-    & $Vivado -mode batch -source $Script -log $logPath -nojournal
-    if ($LASTEXITCODE -ne 0) {
-        throw "Vivado failed with exit code $LASTEXITCODE"
+
+    Remove-HdiWriteTests $Root
+    Push-Location $Root
+    try {
+        & $Vivado -mode batch -source $Script -log $logPath -nojournal
+        if ($LASTEXITCODE -ne 0) {
+            throw "Vivado failed with exit code $LASTEXITCODE"
+        }
+    } finally {
+        Pop-Location
+        Remove-HdiWriteTests $Root
     }
 }
 
@@ -98,7 +106,38 @@ function Invoke-VivadoGui {
     }
 
     Write-Host "Opening Vivado GUI with: $Script"
-    & $Vivado -mode gui -source $Script
+    Remove-HdiWriteTests $Root
+    Push-Location $Root
+    try {
+        & $Vivado -mode gui -source $Script
+    } finally {
+        Pop-Location
+        Remove-HdiWriteTests $Root
+    }
+}
+
+function Remove-HdiWriteTests {
+    param([string]$Root)
+
+    for ($i = 0; $i -lt 5; $i++) {
+        $files = @(Get-ChildItem -LiteralPath $Root -Recurse -Force -Filter ".hdi.isWriteableTest.*.tmp" -ErrorAction SilentlyContinue)
+        if ($files.Count -eq 0) {
+            return
+        }
+
+        foreach ($file in $files) {
+            if ($file.FullName.StartsWith($Root, [System.StringComparison]::OrdinalIgnoreCase)) {
+                Remove-Item -LiteralPath $file.FullName -Force -ErrorAction SilentlyContinue
+            }
+        }
+
+        Start-Sleep -Milliseconds 200
+    }
+
+    $remaining = @(Get-ChildItem -LiteralPath $Root -Recurse -Force -Filter ".hdi.isWriteableTest.*.tmp" -ErrorAction SilentlyContinue)
+    if ($remaining.Count -gt 0) {
+        Write-Warning "Vivado write-test tmp files remain under project: $Root"
+    }
 }
 
 $root = Resolve-ProjectRoot $Project
@@ -171,4 +210,3 @@ switch ($Action) {
         }
     }
 }
-

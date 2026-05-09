@@ -41,5 +41,8 @@ Do not rely on a user-global Xilinx skill for this project.
 - For XDC and board-level decisions, clock/reset/LED/key/UART and other board IO pins must come from `assets/qmx7020_pin_index.md` or `assets/qmx7020_pin_index.csv` first. Use `assets/qmx7020_schematic_index.md` for schematic-level notes, reuse/conflict warnings, boot/JTAG/PS peripheral context, and IO bank/electrical reminders. Cross-check against source PDFs when needed. Do not use memory for board pins.
 - Prefer reproducible Tcl/batch flows over GUI-only steps.
 - For local automation inspired by FPGABuilder, prefer the lightweight workspace wrapper `tools/fpga.ps1`, the template `templates/qmx7020_fpga_project.yaml`, and validation script `tools/validate_fpga_project.ps1` over installing a generic global framework.
+- Never run Vivado from the workspace root, `.codex/`, or `.claude/`. Vivado must run with the concrete project directory as the process working directory so `.Xil/`, `.hdi.isWriteableTest.*.tmp`, logs, and generated files stay inside that project or its ignored build folders.
+- Keep root clean. Do not add root-level command wrappers or generated tool files unless the user explicitly asks for root-level files. Put helper entry points under `tools/`.
+- After any Vivado run, remove leftover `.hdi.isWriteableTest.*.tmp` files from the project tree.
 - Simulate before synthesis/implementation when practical.
 - Do not infer board IO pins from the part number; require schematic/manual pins for XDC.
