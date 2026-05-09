@@ -53,39 +53,53 @@ D:\FPGA\ZYNQ\
 ├── .claude/
 ├── .mcp/
 └── projects/
-    ├── led/
-    └── led_twinkle/
+    ├── _template_qmx7020/
+    └── led/
 ```
 
 `tools/` is for local helper scripts such as wrappers, validators, index generators, and report helpers. `.mcp/` is for MCP servers/connectors and should stay separate.
 
+## Project Template
+
+Use `projects/_template_qmx7020/` as the preferred starting point for new QMX ZYNQ 7020 projects. It contains:
+
+- staged Xilinx layout: `01_hls/`, `02_vivado/`, `03_vitis/`, `04_petalinux/`
+- Vivado 2020.2 scripts for project creation, simulation, synthesis, bitstream, and GUI launch
+- a minimal heartbeat RTL design and testbench
+- base board constraints for `sys_clk`, `sys_rst_n`, and two PL LEDs
+- design docs under `docs/`
+- VSCode tasks under `.vscode/tasks.json`
+- optional hook entry points
+
+Create a derived project from the workspace root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/new_fpga_project.ps1 -Name uart_loopback
+```
+
+Then update the derived project's `fpga_project.yaml`, `docs/requirements.md`, RTL, testbench, and XDC files.
+
 ## Project Configuration
 
-For a new project, copy:
+The lightweight config-only template remains available at:
 
 ```text
 templates/qmx7020_fpga_project.yaml
 ```
 
-to:
-
-```text
-projects/<project>/fpga_project.yaml
-```
-
-Then edit the project name, top module, source paths, and script paths.
+For complete projects, prefer deriving from `projects/_template_qmx7020/` because it already includes scripts, docs, VSCode tasks, and a working Vivado base design.
 
 ## Unified Commands
 
 Run from the workspace root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools/fpga.ps1 -Project projects/led_twinkle -Action validate
-powershell -ExecutionPolicy Bypass -File tools/fpga.ps1 -Project projects/led_twinkle -Action create
-powershell -ExecutionPolicy Bypass -File tools/fpga.ps1 -Project projects/led_twinkle -Action sim
-powershell -ExecutionPolicy Bypass -File tools/fpga.ps1 -Project projects/led_twinkle -Action synth
-powershell -ExecutionPolicy Bypass -File tools/fpga.ps1 -Project projects/led_twinkle -Action bitstream
-powershell -ExecutionPolicy Bypass -File tools/fpga.ps1 -Project projects/led_twinkle -Action gui
+powershell -ExecutionPolicy Bypass -File tools/fpga.ps1 -Project projects/_template_qmx7020 -Action validate
+powershell -ExecutionPolicy Bypass -File tools/fpga.ps1 -Project projects/_template_qmx7020 -Action create
+powershell -ExecutionPolicy Bypass -File tools/fpga.ps1 -Project projects/_template_qmx7020 -Action sim
+powershell -ExecutionPolicy Bypass -File tools/fpga.ps1 -Project projects/_template_qmx7020 -Action synth
+powershell -ExecutionPolicy Bypass -File tools/fpga.ps1 -Project projects/_template_qmx7020 -Action bitstream
+powershell -ExecutionPolicy Bypass -File tools/fpga.ps1 -Project projects/_template_qmx7020 -Action gui
 ```
 
 The wrapper looks for scripts in either:

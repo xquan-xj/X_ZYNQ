@@ -1,0 +1,121 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "FPGA: Validate Project",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/../../tools/fpga.ps1",
+        "-Project",
+        "${workspaceFolder}",
+        "-Action",
+        "validate"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Vivado: Create Project",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/../../tools/fpga.ps1",
+        "-Project",
+        "${workspaceFolder}",
+        "-Action",
+        "create"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Vivado: Run Simulation",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/../../tools/fpga.ps1",
+        "-Project",
+        "${workspaceFolder}",
+        "-Action",
+        "sim"
+      ],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Vivado: Run Synthesis",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/../../tools/fpga.ps1",
+        "-Project",
+        "${workspaceFolder}",
+        "-Action",
+        "synth"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Vivado: Generate Bitstream",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/../../tools/fpga.ps1",
+        "-Project",
+        "${workspaceFolder}",
+        "-Action",
+        "bitstream"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Vivado: Open GUI",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/../../tools/fpga.ps1",
+        "-Project",
+        "${workspaceFolder}",
+        "-Action",
+        "gui"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "FPGA: Clean Generated Files",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/../../tools/fpga.ps1",
+        "-Project",
+        "${workspaceFolder}",
+        "-Action",
+        "clean"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

@@ -16,8 +16,8 @@ D:\FPGA\ZYNQ\
 ├── tools/                            # 本地轻量自动化工具
 ├── templates/                        # 工程配置模板
 └── projects/                         # 具体 FPGA 工程
-    ├── led/
-    └── led_twinkle/
+    ├── _template_qmx7020/             # 启明星 7020 通用工程母版
+    └── led/
 ```
 
 ## 板级资料
@@ -89,53 +89,57 @@ D:\FPGA\ZYNQ\
 
 ## 推荐单工程结构
 
-普通 PL-only Vivado 工程建议使用：
+本工作区现在优先使用 `projects/_template_qmx7020/` 作为新工程母版。它采用分阶段结构，同时包含一个最小可仿真、可综合、可上板点灯的 PL 基础设计：
 
 ```text
 project_name/
 ├── fpga_project.yaml
-├── rtl/
-├── tb/
-├── constr/
-├── scripts/
-│   ├── project_config.tcl
-│   ├── create_project.tcl
-│   ├── sim.tcl
-│   ├── synth.tcl
-│   ├── build_bit.tcl
-│   └── open_gui.tcl
-├── sim/
-├── reports/
-├── build/
-├── doc/
+├── 01_hls/            # 可选 HLS
+├── 02_vivado/         # RTL / TB / XDC / Vivado Tcl / output
+├── 03_vitis/          # 可选 Vitis 2020.2 软件
+├── 04_petalinux/      # 可选 PetaLinux 2020.2
+├── docs/              # 需求、系统设计、硬件、架构、波形、流程状态
 ├── hooks/
 ├── .vscode/
 ├── README.md
 └── .gitignore
 ```
 
-如果是 HLS + Vivado + Vitis + PetaLinux 的完整链路，可以使用分阶段结构：
+普通 PL-only 工程也可以只使用其中的 `02_vivado/`，暂时保留其他阶段目录作为后续扩展入口。
+
+## 从母版创建新工程
+
+从工作区根目录执行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\new_fpga_project.ps1 -Name uart_loopback
+```
+
+这会从 `projects/_template_qmx7020/` 复制出：
 
 ```text
-project_name/
-├── fpga_project.yaml
-├── 01_hls/
-├── 02_vivado/
-├── 03_vitis/
-└── 04_petalinux/
+projects/uart_loopback/
 ```
+
+然后优先修改：
+
+- `projects/uart_loopback/fpga_project.yaml`
+- `projects/uart_loopback/docs/requirements.md`
+- `projects/uart_loopback/docs/system_design.md`
+- `projects/uart_loopback/02_vivado/rtl/`
+- `projects/uart_loopback/02_vivado/constraints/`
 
 ## 统一命令
 
 从工作区根目录执行：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\led_twinkle -Action validate
-powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\led_twinkle -Action create
-powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\led_twinkle -Action sim
-powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\led_twinkle -Action synth
-powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\led_twinkle -Action bitstream
-powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\led_twinkle -Action gui
+powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_template_qmx7020 -Action validate
+powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_template_qmx7020 -Action create
+powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_template_qmx7020 -Action sim
+powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_template_qmx7020 -Action synth
+powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_template_qmx7020 -Action bitstream
+powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_template_qmx7020 -Action gui
 ```
 
 `tools/fpga.ps1` 会在项目内查找：
@@ -149,25 +153,21 @@ scripts/
 
 ## 工程配置模板
 
-新建工程时，从模板复制：
+轻量配置文件模板仍保留在：
 
 ```text
 templates/qmx7020_fpga_project.yaml
 ```
 
-到：
+但完整新工程建议直接从：
 
 ```text
-projects/project_name/fpga_project.yaml
+projects/_template_qmx7020/
 ```
 
-然后修改：
+派生，因为它已经包含 docs、VSCode tasks、Vivado Tcl、仿真 testbench 和基础 XDC。
 
-- 工程名
-- 顶层模块名
-- RTL / testbench / XDC 路径
-- Tcl 脚本路径
-- hooks 配置
+派生后至少修改工程名、顶层模块名、RTL/testbench/XDC 和需求文档。
 
 ## Hooks
 
@@ -197,7 +197,7 @@ hooks/post_bitstream.ps1
 运行：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\validate_fpga_project.ps1 -Project projects\led_twinkle
+powershell -ExecutionPolicy Bypass -File tools\validate_fpga_project.ps1 -Project projects\_template_qmx7020
 ```
 
 会检查：
