@@ -74,7 +74,7 @@ D:\FPGA\ZYNQ\
 
 - `assets/` 里的启明星 7020 管脚表、原理图索引、手册资料
 - `.codex/skills/xilinx-suite/` 和 `.claude/skills/xilinx-suite/`
-- `tools/fpga.ps1` 统一命令入口
+- `fpga.cmd` / `tools/fpga.ps1` 统一命令入口
 - `templates/qmx7020_fpga_project.yaml` 工程配置模板
 - `AGENTS.md` / `CLAUDE.md` 中的默认板卡、器件、Vivado 版本规则
 
@@ -112,7 +112,13 @@ project_name/
 从工作区根目录执行：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\new_fpga_project.ps1 -Name uart_loopback
+.\new-fpga uart_loopback
+```
+
+也可以使用统一入口：
+
+```powershell
+.\fpga new uart_loopback
 ```
 
 这会从 `projects/_template_qmx7020/` 复制出：
@@ -134,12 +140,12 @@ projects/uart_loopback/
 从工作区根目录执行：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_template_qmx7020 -Action validate
-powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_template_qmx7020 -Action create
-powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_template_qmx7020 -Action sim
-powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_template_qmx7020 -Action synth
-powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_template_qmx7020 -Action bitstream
-powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_template_qmx7020 -Action gui
+.\fpga validate projects\_template_qmx7020
+.\fpga create projects\_template_qmx7020
+.\fpga sim projects\_template_qmx7020
+.\fpga synth projects\_template_qmx7020
+.\fpga bitstream projects\_template_qmx7020
+.\fpga gui projects\_template_qmx7020
 ```
 
 `tools/fpga.ps1` 会在项目内查找：

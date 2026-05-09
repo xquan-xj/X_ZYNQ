@@ -28,10 +28,10 @@ fpga_project.yaml
 Run from the workspace root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_template_qmx7020 -Action validate
-powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_template_qmx7020 -Action create
-powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_template_qmx7020 -Action sim
-powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_template_qmx7020 -Action bitstream
+.\fpga validate projects\_template_qmx7020
+.\fpga create projects\_template_qmx7020
+.\fpga sim projects\_template_qmx7020
+.\fpga bitstream projects\_template_qmx7020
 ```
 
 ## Derive a New Project
@@ -39,7 +39,7 @@ powershell -ExecutionPolicy Bypass -File tools\fpga.ps1 -Project projects\_templ
 Prefer copying this template through the helper:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\new_fpga_project.ps1 -Name my_project
+.\new-fpga my_project
 ```
 
 Then update:
