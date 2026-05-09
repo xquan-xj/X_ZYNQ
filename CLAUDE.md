@@ -68,6 +68,7 @@ All projects follow this layout:
 7. **Keep generated files in projects**: never run Vivado from the workspace root, `.codex/`, or `.claude/`. Vivado must run with the concrete project directory as its process working directory so `.Xil/`, `.hdi.isWriteableTest.*.tmp`, logs, and generated files stay inside the project or ignored build folders.
 8. **Keep root clean**: put helper command wrappers under `tools/`; do not add root-level wrappers or generated tool files unless explicitly requested.
 9. **Clean Vivado write tests**: remove leftover `.hdi.isWriteableTest.*.tmp` files from the project tree after Vivado runs.
+10. **Keep README bilingual**: when creating or updating any `README.md`, also create or update `README.zh.md` in the same directory. Preserve commands, paths, signal names, module names, pin names, Tcl/Verilog snippets, and code blocks verbatim unless the user explicitly asks to translate them.
 
 ## VSCode Tasks
 

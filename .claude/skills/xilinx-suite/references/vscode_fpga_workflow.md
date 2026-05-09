@@ -30,6 +30,8 @@ requirements analysis
 
 Do not jump directly to board testing for non-trivial designs. Prefer a minimal simulated module first, then integrate.
 
+This order is mandatory for project creation, vendor-example reproduction, migration, or feature modification. Do not write RTL, testbench, XDC, or Tcl before the relevant docs are created or updated. If inheriting an existing example, first document what the example does, which pins/interfaces it uses, expected waveform behavior, and acceptance criteria.
+
 ## Recommended Project Layout
 
 For single-tool Vivado projects, this compact layout is preferred:
@@ -87,6 +89,47 @@ Before generating RTL for a new module or project, create or update the relevant
 - `flow_status.md`: checklist of generated files, simulation status, synthesis/implementation status, and board-test status.
 
 Small learning examples such as a one-module LED blink may use short docs, but should still record the clock, reset, LED output, part, and pin-source assumptions.
+
+For this workspace, every documentation file should have a Chinese counterpart when created or updated:
+
+```text
+requirements.md      requirements.zh.md
+system_design.md     system_design.zh.md
+hardware.md          hardware.zh.md
+architecture.md      architecture.zh.md
+waveform.md          waveform.zh.md
+flow_status.md       flow_status.zh.md
+README.md            README.zh.md
+```
+
+Preserve commands, paths, signal names, module names, pin names, Tcl/Verilog snippets, and code blocks verbatim unless translation is explicitly requested.
+
+## Waveform Before RTL
+
+`waveform.md` is a design input, not an after-the-fact report. Before RTL or testbench edits, document the expected signal behavior.
+
+Preferred rendering:
+
+- Use WaveDrom for simple digital timing diagrams.
+- Use `h` and `l` to draw high/low rail-style levels instead of only numeric `1` and `0`.
+- Put time and trigger events either in a dedicated WaveDrom row such as `time/event` or in a table directly below the diagram.
+- Avoid arrow/edge labels when they overlap the waveform in Markdown preview.
+- Keep a plain text fallback diagram when plugin rendering is uncertain.
+
+Example:
+
+```wavedrom
+{
+  config: { hscale: 2 },
+  signal: [
+    { name: "key", wave: "h...l...h...l...", data: ["released", "pressed", "released", "pressed"] },
+    { name: "led", wave: "l...h...l...h...", data: ["off", "on", "off", "on"] },
+    { name: "time/event", wave: "=...=...=...=...", data: ["0 ns released", "1200 ns press", "1800 ns release", "2800 ns press"] }
+  ]
+}
+```
+
+For complex diagrams that WaveDrom cannot express well, draw.io may be used for architecture or annotated static diagrams, but keep the source file next to the Markdown and include a Markdown-readable summary table.
 
 ## VSCode Tasks
 
@@ -156,6 +199,7 @@ Keep task labels stable and explicit. Avoid VSCode tasks that only work after ma
 [ ] Reset behavior passes
 [ ] Main function passes
 [ ] Boundary conditions are covered
+[ ] Expected waveform was written before RTL/testbench implementation
 [ ] Waveform matches the expected timing
 ```
 
@@ -228,6 +272,7 @@ Use these defaults unless the user asks otherwise:
 
 ```text
 document before code
+waveform before testbench
 module before system
 simulation before board
 minimal feature before complete feature
@@ -235,4 +280,3 @@ warnings before results
 signals before peripherals
 scripts before manual GUI
 ```
-

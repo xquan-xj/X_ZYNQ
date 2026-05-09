@@ -84,6 +84,23 @@ C/C++ 算法 → IP 核        硬件平台设计           软件开发 / Linux
 
 ---
 
+## 第二点五步：工程化文档门禁（必须先做）
+
+对任何 FPGA 工程的新建、复现、移植、改造、调试闭环任务，必须先读取 `./references/vscode_fpga_workflow.md`，并在写 RTL/TB/XDC/Tcl 之前创建或更新工程文档。不得只写代码然后事后补文档。
+
+最小文档闭环：
+
+1. `requirements.md` / `requirements.zh.md`：目标、输入输出、非目标、验收标准
+2. `system_design.md` / `system_design.zh.md`：模块边界、数据/控制路径、时钟复位、调试信号
+3. `hardware.md` / `hardware.zh.md`：板卡、part、管脚来源、IOSTANDARD、冲突/复用风险
+4. `architecture.md` / `architecture.zh.md`：Mermaid 或文字框图
+5. `waveform.md` / `waveform.zh.md`：先画预期波形，再写 testbench/RTL；优先使用 WaveDrom 高低电平 `h/l`，事件/时间标注放入图中或图下表格，避免遮挡
+6. `flow_status.md` / `flow_status.zh.md`：需求、RTL、仿真、约束、实现、bitstream、上板状态 checklist
+
+如果用户要求“复现某个例程”，也必须先把例程目标、接口、管脚、预期波形和验收标准落到 docs，再修改 RTL/TB/XDC。
+
+README 双语规则：创建或更新任意 `README.md` 时，必须同步创建或更新同目录 `README.zh.md`；命令、路径、信号名、模块名、管脚名、Tcl/Verilog 代码块保持原样。
+
 ## 第三步：按工具流程执行
 
 确认需求后，加载对应参考文件并按步骤生成脚本。
@@ -93,7 +110,7 @@ C/C++ 算法 → IP 核        硬件平台设计           软件开发 / Linux
 **始终在生成脚本之前先读取参考文件**，不要凭记忆生成 Tcl/XSCT/命令，因为不同 Vivado/Vitis 版本的 API 有差异。
 
 ```
-新建 FPGA 工程 → 先读 ./references/vscode_fpga_workflow.md
+新建/复现/修改 FPGA 工程 → 先读 ./references/vscode_fpga_workflow.md
                 → 再按工具类型读取 Vivado/HLS/Vitis/PetaLinux 参考
 
 Vivado 工程  → 先读 ./references/vivado_guide.md
@@ -120,7 +137,7 @@ PetaLinux    → 先读 ./references/petalinux_guide.md
 2. **运行命令**：如何在命令行或 GUI 中执行
 3. **预期输出**：脚本运行成功后会产生哪些文件
 4. **下一步提示**：完成本阶段后应该做什么
-5. **工程文档产物**：新建工程时参考 `vscode_fpga_workflow.md`，按复杂度生成或更新 `requirements.md`、`system_design.md`、`hardware.md`、`architecture.md`、`waveform.md`、`flow_status.md`
+5. **工程文档产物**：新建、复现、修改工程时参考 `vscode_fpga_workflow.md`，先生成或更新 `requirements.md`、`system_design.md`、`hardware.md`、`architecture.md`、`waveform.md`、`flow_status.md` 及对应 `.zh.md`，再写 RTL/TB/XDC/Tcl
 6. **VSCode 任务入口**：面向 VSCode 使用的工程应提供 `.vscode/tasks.json`，覆盖工程创建、仿真、综合、bitstream、打开 GUI 等常用命令
 7. **阶段检查清单**：在文档或 README 中记录需求、RTL、仿真、约束、实现、上板验证 checklist 的当前状态
 

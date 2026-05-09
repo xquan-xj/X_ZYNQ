@@ -44,5 +44,6 @@ Do not rely on a user-global Xilinx skill for this project.
 - Never run Vivado from the workspace root, `.codex/`, or `.claude/`. Vivado must run with the concrete project directory as the process working directory so `.Xil/`, `.hdi.isWriteableTest.*.tmp`, logs, and generated files stay inside that project or its ignored build folders.
 - Keep root clean. Do not add root-level command wrappers or generated tool files unless the user explicitly asks for root-level files. Put helper entry points under `tools/`.
 - After any Vivado run, remove leftover `.hdi.isWriteableTest.*.tmp` files from the project tree.
+- When creating or updating any `README.md`, also create or update `README.zh.md` in the same directory. Preserve commands, paths, signal names, module names, pin names, Tcl/Verilog snippets, and code blocks verbatim unless the user explicitly asks to translate them.
 - Simulate before synthesis/implementation when practical.
 - Do not infer board IO pins from the part number; require schematic/manual pins for XDC.
