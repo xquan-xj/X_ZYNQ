@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit(/.claude/skills/xilinx-suite/**)",
+      "Bash(CLAUDE_CODE_GIT_BASH_PATH=\"D:/Git/usr/bin/bash.exe\" claude plugin marketplace add QingquanYao/xilinx-skill)"
+    ]
+  }
+}

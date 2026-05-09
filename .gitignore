@@ -1,0 +1,56 @@
+# Vivado / Vitis generated files
+.Xil/
+*.jou
+*.log
+*.str
+*.wdb
+*.wcfg
+*.pb
+*.rpt
+*.dcp
+*.bit
+*.bin
+*.ltx
+*.xsa
+*.hdf
+*.hwdef
+*.sysdef
+*.cache/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.sim/
+
+# Workspace build outputs
+build/
+reports/
+sim/
+output/
+projects/*/build/
+projects/*/reports/
+projects/*/sim/
+projects/*/output/
+projects/*/02_vivado/build/
+projects/*/02_vivado/reports/
+projects/*/02_vivado/sim/
+projects/*/02_vivado/output/
+
+# Local MCP servers/connectors and dependencies
+.mcp/
+node_modules/
+
+# Machine-local assistant settings
+.claude/settings.local.json
+
+# Python / tooling caches
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+dist/
+*.egg-info/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.tmp

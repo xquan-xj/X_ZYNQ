@@ -1,0 +1,61 @@
+project:
+  name: example_project
+  version: 0.1.0
+  description: Example QMX ZYNQ 7020 FPGA project
+
+board:
+  name: qmx7020
+  vendor: 正点原子
+  display_name: 启明星 ZYNQ 7020
+  pin_index: ../../assets/qmx7020_pin_index.csv
+  schematic_index: ../../assets/qmx7020_schematic_index.md
+
+fpga:
+  vendor: xilinx
+  family: zynq-7000
+  part: xc7z020clg400-2
+  top_module: top
+
+tools:
+  vivado_version: 2020.2
+  vitis_version: 2020.2
+  vivado_path: D:\Xilinx\Vivado\2020.2\bin\vivado.bat
+
+sources:
+  rtl:
+    - rtl/**/*.v
+    - rtl/**/*.sv
+  testbench:
+    - tb/**/*.v
+    - tb/**/*.sv
+  constraints:
+    - constr/*.xdc
+
+build:
+  output_root: build
+  reports_dir: reports
+  logs_dir: build/logs
+  bitstreams_dir: build/bitstreams
+
+commands:
+  create: scripts/create_project.tcl
+  sim: scripts/sim.tcl
+  synth: scripts/synth.tcl
+  bitstream: scripts/build_bit.tcl
+  gui: scripts/open_gui.tcl
+
+hooks:
+  pre_create: hooks/pre_create.ps1
+  post_create: hooks/post_create.ps1
+  pre_sim: hooks/pre_sim.ps1
+  post_sim: hooks/post_sim.ps1
+  pre_synth: hooks/pre_synth.ps1
+  post_synth: hooks/post_synth.ps1
+  pre_bitstream: hooks/pre_bitstream.ps1
+  post_bitstream: hooks/post_bitstream.ps1
+
+checks:
+  require_sim_before_bitstream: true
+  require_real_xdc_pins: true
+  require_create_clock: true
+  require_iostandard: true

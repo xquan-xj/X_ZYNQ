@@ -1,0 +1,50 @@
+project:
+  name: led
+  version: 0.1.0
+  description: QMX ZYNQ 7020 PL LED blink example
+
+board:
+  name: qmx7020
+  vendor: 正点原子
+  display_name: 启明星 ZYNQ 7020
+  pin_index: ../../assets/qmx7020_pin_index.csv
+  schematic_index: ../../assets/qmx7020_schematic_index.md
+
+fpga:
+  vendor: xilinx
+  family: zynq-7000
+  part: xc7z020clg400-2
+  top_module: led
+
+tools:
+  vivado_version: 2020.2
+  vitis_version: 2020.2
+  vivado_path: D:\Xilinx\Vivado\2020.2\bin\vivado.bat
+
+sources:
+  rtl:
+    - 02_vivado/rtl/**/*.v
+    - 02_vivado/rtl/**/*.sv
+  testbench:
+    - 02_vivado/tb/**/*.v
+    - 02_vivado/tb/**/*.sv
+  constraints:
+    - 02_vivado/constraints/*.xdc
+
+build:
+  output_root: 02_vivado/build
+  reports_dir: 02_vivado/reports
+  logs_dir: build/logs
+  bitstreams_dir: 02_vivado/output
+
+commands:
+  create: 02_vivado/create_project.tcl
+  sim: 02_vivado/sim.tcl
+  bitstream: 02_vivado/build.tcl
+
+checks:
+  require_sim_before_bitstream: true
+  require_real_xdc_pins: true
+  require_create_clock: true
+  require_iostandard: true
+
