@@ -277,3 +277,4 @@ powershell -ExecutionPolicy Bypass -File tools\validate_fpga_project.ps1 -Projec
 先最小功能，再复杂系统
 先查板级索引，再写 XDC
 ```
+111
