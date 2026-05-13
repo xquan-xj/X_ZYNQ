@@ -101,9 +101,17 @@ fpga synth _template_qmx7020
 fpga bitstream _template_qmx7020
 fpga gui _template_qmx7020
 fpga wave _template_qmx7020
+fpga inspect _template_qmx7020
+fpga program _template_qmx7020
+fpga close-save _template_qmx7020
+fpga close-discard _template_qmx7020
 ```
 
 Use `wave` after `sim` to open the latest `.wdb` waveform database in Vivado GUI.
+Use `inspect` to open the Vivado project plus available waveform, schematic, reports, and output pointers in one GUI session.
+Use `program` after `bitstream` to program the latest `.bit` file through USB-JTAG in Vivado Hardware Manager batch mode.
+Use `close-save` to send `Ctrl+S` to the matching Vivado GUI window and close it gracefully. Use `close-discard` to terminate the matching Vivado GUI window without saving.
+GUI-oriented commands (`gui`, `wave`, and `inspect`) launch Vivado in the background so the terminal remains available for follow-up commands.
 
 From PowerShell, use `.\fpga ...` if the current directory is not on `PATH`.
 
@@ -133,6 +141,14 @@ hooks/pre_gui.ps1
 hooks/post_gui.ps1
 hooks/pre_wave.ps1
 hooks/post_wave.ps1
+hooks/pre_inspect.ps1
+hooks/post_inspect.ps1
+hooks/pre_program.ps1
+hooks/post_program.ps1
+hooks/pre_close_save.ps1
+hooks/post_close_save.ps1
+hooks/pre_close_discard.ps1
+hooks/post_close_discard.ps1
 ```
 
 Use hooks for report copying, artifact naming, checksums, notifications, or release packaging. Keep hardware-tool commands in Tcl scripts unless there is a clear reason to move them.

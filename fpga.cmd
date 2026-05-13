@@ -11,6 +11,10 @@ if "%~1"=="" (
   echo   fpga bitstream ^<project_name_or_path^>
   echo   fpga gui ^<project_name_or_path^>
   echo   fpga wave ^<project_name_or_path^>
+  echo   fpga inspect ^<project_name_or_path^>
+  echo   fpga program ^<project_name_or_path^>
+  echo   fpga close-save ^<project_name_or_path^>
+  echo   fpga close-discard ^<project_name_or_path^>
   echo   fpga clean ^<project_name_or_path^>
   exit /b 1
 )

@@ -117,6 +117,7 @@ Vivado 工程  → 先读 ./references/vivado_guide.md
               → 如有 PS（Zynq-7000）→ 再读 ./references/zynq7_ps_config.md
               → 如有 PS（MPSoC ZU+）→ 再读 ./references/mpsoc_ps_config.md
               → 如有 IO  → 再读 ./references/xdc_constraints.md
+              → 如涉及常用 IP 参数含义/局限 → 再读 ./references/ip_cores/common_ip_cores.zh.md
               → 如有 JESD204 → 再读 ./references/jesd204b_to_c_migration.md
 
 HLS 工程     → 先读 ./references/hls_guide.md
@@ -193,12 +194,15 @@ hls_ip/                  →   IP Catalog
 4. **PetaLinux 版本匹配**：PetaLinux 版本必须与 Vivado 版本一致（例如都用 2020.2）
 5. **器件系列判断**：`xc7z` 开头 → Zynq-7000（PS 用 `processing_system7` IP）；`xczu` 开头 → MPSoC（PS 用 `zynq_ultra_ps_e` IP）；`vu`/`ku`/`xc7` → 纯 FPGA；`xcvc` → Versal
 6. **本环境**：Windows 10, Vivado 2020.2 路径 `D:\Xilinx\Vivado\2020.2`, 器件 xc7z020clg400-2
+7. **Vivado Tcl BOM 编码陷阱**：Vivado 2020.2 会把 Tcl 文件开头的 UTF-8 BOM 解析成命令，典型报错是 `invalid command name "ďť?#"` 或 `invalid command name "ï»¿#"`。在 Windows/PowerShell 生成 `.tcl` 时不要使用会写入 BOM 的编码；优先写 ASCII 或 UTF-8 no BOM。若已出现该错误，先把工程内 `*.tcl` 转为无 BOM，再重新运行 `tools\fpga sim/create/synth`。
+8. **IP 核配置准确性边界**：不要把“工程能创建/能综合”当成“IP 参数必然正确”。IP 配置必须以 `.xci` 实际参数、Vivado validation/DRC、综合/实现报告、官方 Product Guide，以及必要时的仿真和上板观测共同确认；不确定的高级参数必须标注假设并回查官方文档。
 
 ---
 
 ## 参考文件
 
 - `./references/vivado_guide.md`：Vivado 工程创建、Block Design、综合实现、报告分析
+- `./references/ip_cores/common_ip_cores.zh.md`：本项目已用常见 IP 核参数含义、局限和验证边界
 - `./references/mpsoc_ps_config.md`：Zynq UltraScale+ PS 详细配置（DDR、MIO、时钟参数）
 - `./references/xdc_constraints.md`：XDC 约束完整指南（时序、IO、例外约束）
 - `./references/hls_guide.md`：Vitis HLS 工程流程（C/C++ → IP）

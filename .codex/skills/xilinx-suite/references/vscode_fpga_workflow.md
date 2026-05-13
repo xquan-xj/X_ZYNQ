@@ -131,6 +131,20 @@ Example:
 
 For complex diagrams that WaveDrom cannot express well, draw.io may be used for architecture or annotated static diagrams, but keep the source file next to the Markdown and include a Markdown-readable summary table.
 
+## Tcl Encoding Guard
+
+Vivado 2020.2 on Windows is sensitive to UTF-8 BOM at the beginning of Tcl scripts. If a generated script starts with BOM bytes, Vivado may fail on line 1 with an error like:
+
+```text
+invalid command name "ďť?#"
+```
+
+When creating or rewriting `.tcl` files for this workspace:
+
+- write Tcl as ASCII when it only contains Tcl commands and English comments;
+- otherwise write UTF-8 without BOM;
+- avoid PowerShell 5.1 `Set-Content -Encoding UTF8` for Tcl because it writes a BOM;
+- if the error appears, convert every project-local `*.tcl` to no-BOM encoding before rerunning `tools\fpga sim`, `tools\fpga create`, or `tools\fpga synth`.
 ## VSCode Tasks
 
 When creating a project intended for VSCode use, provide `.vscode/tasks.json` entries for common commands:

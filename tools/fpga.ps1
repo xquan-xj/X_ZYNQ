@@ -1,5 +1,5 @@
 param(
-    [ValidateSet("validate", "create", "sim", "synth", "bitstream", "gui", "wave", "clean")]
+    [ValidateSet("validate", "create", "sim", "synth", "bitstream", "gui", "wave", "inspect", "program", "close-save", "close-discard", "clean")]
     [string]$Action = "validate",
 
     [string]$Project = ".",
@@ -118,11 +118,129 @@ function Invoke-VivadoGui {
 
     Write-Host "Opening Vivado GUI with: $Script"
     Remove-HdiWriteTests $Root
-    Push-Location $Root
-    try {
-        & $Vivado -mode gui -source $Script
-    } finally {
-        Pop-Location
+    $pidFile = Join-Path $Root "build\gui\vivado_gui.pid"
+    if (Test-Path $pidFile) {
+        Remove-Item -LiteralPath $pidFile -Force -ErrorAction SilentlyContinue
+    }
+    $launchTime = Get-Date
+    $process = Start-Process -FilePath $Vivado `
+        -ArgumentList @("-mode", "gui", "-source", $Script) `
+        -WorkingDirectory $Root `
+        -WindowStyle Normal `
+        -PassThru
+    Write-Host "Vivado GUI launched in background. Launcher PID: $($process.Id)"
+    Register-VivadoGuiProcess $Root $launchTime
+}
+
+function Find-VivadoGuiProcess {
+    param([string]$Root)
+
+    $pidFile = Join-Path $Root "build\gui\vivado_gui.pid"
+    if (Test-Path $pidFile) {
+        $pidText = (Get-Content -Path $pidFile -TotalCount 1).Trim()
+        $processId = 0
+        if ([int]::TryParse($pidText, [ref]$processId)) {
+            $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
+            if ($process) {
+                $process.Refresh()
+                return $process
+            }
+        }
+    }
+
+    $projectName = Split-Path $Root -Leaf
+    $vivadoProcesses = @(Get-Process -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.ProcessName -like "vivado*"
+        })
+
+    if ($vivadoProcesses.Count -eq 0) {
+        throw "No Vivado GUI process found."
+    }
+
+    $escapedProject = [regex]::Escape($projectName)
+    $matched = @($vivadoProcesses | Where-Object {
+        $_.MainWindowTitle -match "(^|[\\/\[\]\s-])$escapedProject([\\/\]\s.]|$)"
+    })
+
+    if ($matched.Count -eq 1) {
+        return $matched[0]
+    }
+
+    if ($matched.Count -gt 1) {
+        $titles = ($matched | ForEach-Object { "$($_.Id): $($_.MainWindowTitle)" }) -join "; "
+        throw "Multiple Vivado GUI windows matched project '$projectName': $titles"
+    }
+
+    $allTitles = ($vivadoProcesses | ForEach-Object { "$($_.Id): $($_.MainWindowTitle)" }) -join "; "
+    throw "No Vivado GUI window clearly matches project '$projectName'. Open windows: $allTitles"
+}
+
+function Register-VivadoGuiProcess {
+    param(
+        [string]$Root,
+        [datetime]$LaunchTime
+    )
+
+    $logPath = Join-Path $Root "vivado.log"
+    $pidDir = Join-Path $Root "build\gui"
+    $pidFile = Join-Path $pidDir "vivado_gui.pid"
+    New-Item -ItemType Directory -Force -Path $pidDir | Out-Null
+
+    for ($i = 0; $i -lt 30; $i++) {
+        if (Test-Path $logPath) {
+            $logItem = Get-Item -LiteralPath $logPath -ErrorAction SilentlyContinue
+            if ($logItem -and $logItem.LastWriteTime -ge $LaunchTime.AddSeconds(-2)) {
+                $logText = Get-Content -Path $logPath -Raw -ErrorAction SilentlyContinue
+                if ($logText -match "Process ID:\s+(\d+)") {
+                    Set-Content -Path $pidFile -Value $Matches[1] -Encoding ASCII
+                    Write-Host "Vivado GUI PID: $($Matches[1])"
+                    return
+                }
+            }
+        }
+        Start-Sleep -Milliseconds 500
+    }
+
+    Write-Warning "Could not record Vivado GUI PID from $logPath yet. close-save/close-discard may need a visible window title fallback."
+}
+
+function Invoke-CloseVivadoGui {
+    param(
+        [string]$Root,
+        [ValidateSet("save", "discard")]
+        [string]$Mode
+    )
+
+    $process = Find-VivadoGuiProcess $Root
+    $process.Refresh()
+    Write-Host "Vivado GUI process: $($process.Id) $($process.MainWindowTitle)"
+
+    if ($Mode -eq "save") {
+        $shell = New-Object -ComObject WScript.Shell
+        $activated = $false
+        if ($process.MainWindowTitle) {
+            $activated = $shell.AppActivate($process.MainWindowTitle)
+        }
+        if (-not $activated) {
+            $activated = $shell.AppActivate($process.Id)
+        }
+        if (-not $activated) {
+            throw "Could not activate Vivado process $($process.Id). Use Vivado Tcl Console: save_project; exit, or use close-discard."
+        }
+        Start-Sleep -Milliseconds 500
+        $shell.SendKeys("^s")
+        Start-Sleep -Seconds 2
+
+        Write-Host "Sent Ctrl+S to Vivado. Sending Alt+F4..."
+        $shell.SendKeys("%{F4}")
+        if (-not $process.WaitForExit(30000)) {
+            throw "Vivado did not close within 30 seconds. Check for an open confirmation dialog."
+        }
+        Remove-HdiWriteTests $Root
+    } else {
+        Write-Host "Closing without saving by terminating Vivado process."
+        Stop-Process -Id $process.Id -Force
         Remove-HdiWriteTests $Root
     }
 }
@@ -138,6 +256,81 @@ function Find-LatestWaveDatabase {
     }
 
     return $wdbFiles[0].FullName
+}
+
+function Find-LatestVivadoProject {
+    param([string]$Root)
+
+    $preferredDirs = @(
+        (Join-Path $Root "02_vivado\build"),
+        (Join-Path $Root "build")
+    )
+
+    foreach ($dir in $preferredDirs) {
+        if (Test-Path $dir) {
+            $xprFiles = @(Get-ChildItem -LiteralPath $dir -Recurse -Force -Filter "*.xpr" -File -ErrorAction SilentlyContinue |
+                Sort-Object LastWriteTime -Descending)
+            if ($xprFiles.Count -gt 0) {
+                return $xprFiles[0].FullName
+            }
+        }
+    }
+
+    $allXprFiles = @(Get-ChildItem -LiteralPath $Root -Recurse -Force -Filter "*.xpr" -File -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending)
+    if ($allXprFiles.Count -eq 0) {
+        return $null
+    }
+
+    return $allXprFiles[0].FullName
+}
+
+function Find-LatestBitstream {
+    param([string]$Root)
+
+    $preferredDirs = @(
+        (Join-Path $Root "02_vivado\output"),
+        (Join-Path $Root "output"),
+        (Join-Path $Root "build")
+    )
+
+    foreach ($dir in $preferredDirs) {
+        if (Test-Path $dir) {
+            $bitFiles = @(Get-ChildItem -LiteralPath $dir -Recurse -Force -Filter "*.bit" -File -ErrorAction SilentlyContinue |
+                Sort-Object LastWriteTime -Descending)
+            if ($bitFiles.Count -gt 0) {
+                return $bitFiles[0].FullName
+            }
+        }
+    }
+
+    $bitFiles = @(Get-ChildItem -LiteralPath $Root -Recurse -Force -Filter "*.bit" -File -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending)
+
+    if ($bitFiles.Count -eq 0) {
+        return $null
+    }
+
+    return $bitFiles[0].FullName
+}
+
+function Find-ReportFiles {
+    param([string]$Root)
+
+    $preferredDirs = @(
+        (Join-Path $Root "02_vivado\reports"),
+        (Join-Path $Root "reports")
+    )
+    $reports = @()
+
+    foreach ($dir in $preferredDirs) {
+        if (Test-Path $dir) {
+            $reports += @(Get-ChildItem -LiteralPath $dir -Recurse -Force -Include "*.rpt", "*.txt" -File -ErrorAction SilentlyContinue |
+                Sort-Object LastWriteTime -Descending)
+        }
+    }
+
+    return @($reports | Select-Object -First 8)
 }
 
 function Convert-ToTclPath {
@@ -172,17 +365,133 @@ function Invoke-WaveGui {
     Write-Host "Wave database: $wdbPath"
     Write-Host "Wave script:   $waveScript"
 
-    Remove-HdiWriteTests $Root
-    Push-Location $Root
-    try {
-        & $Vivado -mode gui -source $waveScript
-        if ($LASTEXITCODE -ne 0) {
-            throw "Vivado failed with exit code $LASTEXITCODE"
-        }
-    } finally {
-        Pop-Location
-        Remove-HdiWriteTests $Root
+    Invoke-VivadoGui $Root $waveScript
+}
+
+function Invoke-InspectGui {
+    param([string]$Root)
+
+    if (-not (Test-Path $Vivado)) {
+        throw "Vivado executable not found: $Vivado"
     }
+
+    $xprPath = Find-LatestVivadoProject $Root
+    $openScript = Find-ProjectScript $Root @("open_gui.tcl", "create_project.tcl")
+    if (-not $xprPath -and -not $openScript) {
+        throw "No .xpr, open_gui.tcl, or create_project.tcl found. Run 'fpga create $Root' first."
+    }
+
+    $wdbPath = Find-LatestWaveDatabase $Root
+    $bitPath = Find-LatestBitstream $Root
+    $reports = Find-ReportFiles $Root
+
+    $inspectDir = Join-Path $Root "build\inspect"
+    New-Item -ItemType Directory -Force -Path $inspectDir | Out-Null
+    $inspectScript = Join-Path $inspectDir "inspect_results.tcl"
+
+    $tcl = @()
+    $tcl += "puts `"FPGA inspect: opening project and available results.`""
+    if ($xprPath) {
+        $tclXprPath = Convert-ToTclPath $xprPath
+        $tcl += "open_project {$tclXprPath}"
+        $tcl += "puts `"Opened Vivado project: $tclXprPath`""
+    } else {
+        $tclOpenScript = Convert-ToTclPath $openScript
+        $tcl += "source {$tclOpenScript}"
+    }
+
+    $tcl += 'update_compile_order -fileset sources_1'
+    $tcl += 'foreach run_name {synth_1 impl_1} {'
+    $tcl += '    set runs [get_runs -quiet $run_name]'
+    $tcl += '    if {[llength $runs] > 0 && [get_property PROGRESS $runs] eq "100%"} {'
+    $tcl += '        if {[catch {open_run $run_name -name $run_name} msg]} {'
+    $tcl += '            puts "INFO: could not open $run_name: $msg"'
+    $tcl += '        } else {'
+    $tcl += '            puts "Opened run: $run_name"'
+    $tcl += '            catch {show_schematic [get_cells -hierarchical]} msg'
+    $tcl += '        }'
+    $tcl += '    } else {'
+    $tcl += '        puts "INFO: $run_name is not available or not complete."'
+    $tcl += '    }'
+    $tcl += '}'
+
+    if ($wdbPath) {
+        $tclWdbPath = Convert-ToTclPath $wdbPath
+        $tcl += "if {[catch {open_wave_database {$tclWdbPath}} msg]} {"
+        $tcl += '    puts "INFO: could not open wave database: $msg"'
+        $tcl += '} else {'
+        $tcl += '    catch {create_wave_config}'
+        $tcl += '    catch {add_wave -r /*}'
+        $tcl += "    puts `"Opened wave database: $tclWdbPath`""
+        $tcl += '}'
+    } else {
+        $tcl += 'puts "INFO: no waveform database found. Run fpga sim first to add wave results."'
+    }
+
+    if ($bitPath) {
+        $tclBitPath = Convert-ToTclPath $bitPath
+        $tcl += "puts `"Latest bitstream: $tclBitPath`""
+    } else {
+        $tcl += 'puts "INFO: no bitstream found. Run fpga bitstream first to add bitstream output."'
+    }
+
+    foreach ($report in $reports) {
+        $tclReportPath = Convert-ToTclPath $report.FullName
+        $tcl += "if {[catch {open_report {$tclReportPath}} msg]} { puts `"Report file: $tclReportPath`" }"
+    }
+
+    $tcl += 'puts "FPGA inspect setup finished. Check Wave, Schematic, Reports, and Messages views."'
+    Set-Content -Path $inspectScript -Value $tcl -Encoding ASCII
+
+    Write-Host "Inspect script: $inspectScript"
+    if ($xprPath) { Write-Host "Vivado project: $xprPath" }
+    if ($wdbPath) { Write-Host "Wave database:  $wdbPath" }
+    if ($bitPath) { Write-Host "Bitstream:      $bitPath" }
+    foreach ($report in $reports) {
+        Write-Host "Report:         $($report.FullName)"
+    }
+
+    Invoke-VivadoGui $Root $inspectScript
+}
+
+function Invoke-ProgramDevice {
+    param([string]$Root)
+
+    if (-not (Test-Path $Vivado)) {
+        throw "Vivado executable not found: $Vivado"
+    }
+
+    $bitPath = Find-LatestBitstream $Root
+    if (-not $bitPath) {
+        throw "No .bit bitstream found under project. Run 'fpga bitstream $Root' first."
+    }
+
+    $programDir = Join-Path $Root "build\program"
+    New-Item -ItemType Directory -Force -Path $programDir | Out-Null
+    $programScript = Join-Path $programDir "program_device.tcl"
+    $tclBitPath = Convert-ToTclPath $bitPath
+
+    $tcl = @(
+        "open_hw_manager",
+        "connect_hw_server",
+        "open_hw_target",
+        "set hw_devices [get_hw_devices]",
+        "if {[llength `$hw_devices] == 0} { error `"No hardware devices found. Check USB-JTAG connection and board power.`" }",
+        "set target_device [lindex [get_hw_devices xc7z020*] 0]",
+        "if {`$target_device eq `"`"} { set target_device [lindex `$hw_devices 0] }",
+        "current_hw_device `$target_device",
+        "refresh_hw_device -update_hw_probes false `$target_device",
+        "set_property PROGRAM.FILE {$tclBitPath} `$target_device",
+        "program_hw_devices `$target_device",
+        "refresh_hw_device `$target_device",
+        "puts `"Programmed bitstream: $tclBitPath`""
+    )
+    Set-Content -Path $programScript -Value $tcl -Encoding ASCII
+
+    Write-Host "Bitstream:      $bitPath"
+    Write-Host "Program script: $programScript"
+
+    Invoke-VivadoBatch $Root $programScript "program.log"
 }
 
 function Remove-HdiWriteTests {
@@ -259,6 +568,26 @@ switch ($Action) {
         Invoke-Hook $root "pre_wave"
         Invoke-WaveGui $root
         Invoke-Hook $root "post_wave"
+    }
+    "inspect" {
+        Invoke-Hook $root "pre_inspect"
+        Invoke-InspectGui $root
+        Invoke-Hook $root "post_inspect"
+    }
+    "program" {
+        Invoke-Hook $root "pre_program"
+        Invoke-ProgramDevice $root
+        Invoke-Hook $root "post_program"
+    }
+    "close-save" {
+        Invoke-Hook $root "pre_close_save"
+        Invoke-CloseVivadoGui $root "save"
+        Invoke-Hook $root "post_close_save"
+    }
+    "close-discard" {
+        Invoke-Hook $root "pre_close_discard"
+        Invoke-CloseVivadoGui $root "discard"
+        Invoke-Hook $root "post_close_discard"
     }
     "clean" {
         $targets = @(

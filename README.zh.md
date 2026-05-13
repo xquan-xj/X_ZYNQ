@@ -141,9 +141,17 @@ fpga synth _template_qmx7020
 fpga bitstream _template_qmx7020
 fpga gui _template_qmx7020
 fpga wave _template_qmx7020
+fpga inspect _template_qmx7020
+fpga program _template_qmx7020
+fpga close-save _template_qmx7020
+fpga close-discard _template_qmx7020
 ```
 
 `wave` 用于在 `sim` 之后用 Vivado GUI 打开最新的 `.wdb` 波形数据库。
+`inspect` 用于在同一个 Vivado GUI 会话中打开工程，并尽量展示已有 waveform、schematic、reports 和输出产物路径。
+`program` 用于在 `bitstream` 之后，通过 Vivado Hardware Manager batch 模式把最新的 `.bit` 文件经 USB-JTAG 下载到板卡。
+`close-save` 用于向匹配的 Vivado GUI 窗口发送 `Ctrl+S` 并正常关闭；`close-discard` 用于不保存并强制结束匹配的 Vivado GUI 窗口。
+GUI 类命令（`gui`、`wave`、`inspect`）会在后台启动 Vivado，因此终端会立即返回，可以继续输入关闭或其他命令。
 
 如果在 PowerShell 中当前目录不在 `PATH`，请使用 `.\fpga ...`。
 
@@ -193,6 +201,14 @@ hooks/pre_gui.ps1
 hooks/post_gui.ps1
 hooks/pre_wave.ps1
 hooks/post_wave.ps1
+hooks/pre_inspect.ps1
+hooks/post_inspect.ps1
+hooks/pre_program.ps1
+hooks/post_program.ps1
+hooks/pre_close_save.ps1
+hooks/post_close_save.ps1
+hooks/pre_close_discard.ps1
+hooks/post_close_discard.ps1
 ```
 
 适合做：
